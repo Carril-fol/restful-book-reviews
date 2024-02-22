@@ -121,19 +121,39 @@ c:\> Python 3.10.11
 
 #### Install Dependencies:
 
-#### To install the dependencies you need to run 'pip install', make sure you are in the project folder and there you should be able to see the 'requirements.txt' file:
+#### First you have to install "pipenv", it allows the creation of the virtual environment and where the dependencies are installed.
 
 ```
 In the IDLE terminal:
-> pip install -r requirements.txt
+> pip install pipenv
 ```
 
-#### Start the server:
+#### Once you have installed "pipenv", you have to start it and install the dependencies:
+
+```
+In the IDLE terminal:
+> pipenv shell
+Launching subshell in virtual environment...
+````
+
+```
+> pipenv install
+````
+
+#### This command installs all the necessary dependencies that are in the "Pipfile".
+
+#### Once the dependencies are installed, the application is ready to start.
+
+#### To start the server:
 
 ```
 In the IDLE terminal:
 > py manage.py runserver
 ````
+
+> **Note:**
+> Once all the previous steps are done, the application is ready to make HTTP requests from a testing program such as POSTMAN or Insomnia.
+
 
 ## Frontend Connection 🖥️
 
@@ -152,8 +172,6 @@ INSTALLED_APPS = [
     ...,
 ]
 ````
-
-#### Once you add the above fields:
 
 ```
 MIDDLEWARE = [
