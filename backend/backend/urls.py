@@ -22,8 +22,13 @@ from .swagger import schema_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # Aplications
     path('accounts/', include('accounts.urls')),
     path('profiles/', include('profiles.urls')),
+    path('books/', include('books.urls')),
+    path('genders/', include('genders.urls')),
+    path('publishers/', include('publishers.urls')),
+    path('reviews/', include('reviews.urls')),
     # Documentation
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

@@ -47,7 +47,9 @@ INSTALLED_APPS = [
     'profiles',
     'drf_yasg',
     'books',
-    'publishers'
+    'publishers',
+    'genders',
+    'reviews'
 ]
 
 MIDDLEWARE = [

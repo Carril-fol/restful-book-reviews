@@ -6,181 +6,250 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.tokens import TokenError
-from rest_framework.permissions import IsAdminUser
 
 from accounts.views import TokenDecoder
+from genders.models import Gender
+from reviews.models import Review
 
-from .serializers import BookSerializer, GenderSerializer
-from .models import Gender, Book
+from .serializers import BookSerializer
+from .models import Book
+
 
 # Create your views here.
-class GenderCreate(APIView):
-    authentication_classes = (JWTAuthentication, IsAdminUser,)
-
-    def post(self, request):
-        try:
-            token_decoder = TokenDecoder()
-            raw_token = request.COOKIES.get('refresh')
-            if not raw_token:
-                return Response({'Error': 'Token is not found in cookies.'}, status=status.HTTP_401_UNAUTHORIZED)
-            user_id = token_decoder.decode_token(raw_token)
-            if user_id is None:
-                return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
-            admin_user = User.objects.get(id=user_id)
-            if admin_user.is_superuser or admin_user.is_staff:
-                serializer = GenderSerializer(data=request.data)
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response({'Message': 'Gender created.'}, status=status.HTTP_201_CREATED)
-            return Response({'Error': 'The logged in user does not have the permissions to perform this action.'}, status=status.HTTP_401_UNAUTHORIZED)
-        except TokenError as error_token:
-            return Response({'Message': 'Invalid refresh token', 'error': str(error_token)},status=status.HTTP_400_BAD_REQUEST)
-        except User.DoesNotExist:
-            return Response({'Error': 'The user entered does not exist.'}, status=status.HTTP_404_NOT_FOUND)
-
-
-class GenderDetail(APIView):
-    authentication_classes = (JWTAuthentication,)
+class PublishBook(APIView):
+    authentication_classes = [JWTAuthentication]
     
-    def get(self, request, gender_id):
+    def post(self, request):
         token_decoder = TokenDecoder()
         raw_token = request.COOKIES.get('refresh')
         if not raw_token:
-            return Response({'Error': 'Token is not found in cookies.'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
         user_id = token_decoder.decode_token(raw_token)
         if user_id is None:
             return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        
         try:
-            gender = get_object_or_404(Gender, id=gender_id)
-            gender_data = {
-                'gender': gender.name,
-                'synopsis': gender.synopsis
-            }
-            books = Book.objects.filter(gender=gender)
-            books_list = []
-            for book in books:
-                book_data = {
-                    'title': book.title,
-                    'subtitle': book.subtitle,
-                    'isbn': book.isbn,
-                    'author': book.author,
-                    'publication_date': book.publication_date,
-                    'synopsis': book.synopsis,
-                    'editorial': book.editorial,
-                    'gender': book.gender
-                }
-                books_list.append(book_data)
-            return Response({'Gender data': gender_data, 'Books with that gender': books_list}, status=status.HTTP_200_OK)
-        except Gender.DoesNotExist:
-            return Response({'Error': 'There is no gender introduced'}, status=status.HTTP_404_NOT_FOUND)
+            admin_user_instance = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'Error': 'No user associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not (admin_user_instance.is_staff or admin_user_instance.is_superuser):
+            return Response({'Error': 'The user does not have permissions for these actions.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        serializer = BookSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'Message': 'Book published.'}, status=status.HTTP_201_CREATED)
+        return Response({'Message': 'Error to publish a book', 'Detail book': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class GenderList(APIView):
-    authentication_classes = (JWTAuthentication,)
 
+class AllBooksList(APIView):
+    authentication_classes = [JWTAuthentication]
+    
     def get(self, request):
         token_decoder = TokenDecoder()
         raw_token = request.COOKIES.get('refresh')
         if not raw_token:
-            return Response({'Error': 'Token is not found in cookies.'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
         user_id = token_decoder.decode_token(raw_token)
         if user_id is None:
-            return Response({'Error': 'Token expired or invalid.'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        
         try:
-            admin_user = User.objects.get(id=user_id)
-            if admin_user.is_superuser or admin_user.is_staff:
-                genders = Gender.objects.all()
-                genders_data_list = []
-                if genders:
-                    for gender in genders:
-                        gender_data = {
-                            'name': gender.name,
-                            'synopsis': gender.synopsis
-                        }
-                        genders_data_list.append(gender_data)
-                    return Response({'Genders': genders_data_list}, status=status.HTTP_200_OK)
-                return Response({'Error': 'There are no literary genders created at this time in the database.'}, status=status.HTTP_404_NOT_FOUND)
-            return Response({'Error': 'The logged in user does not have the permissions to perform this action.'}, status=status.HTTP_401_UNAUTHORIZED)
+            user_instance = User.objects.get(id=user_id)
         except User.DoesNotExist:
-            return Response({'Error': 'The user entered does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'Error': 'No user associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
+
+        books = Book.objects.all()
+        if not books:
+            return Response({'Message': 'No books for the moment.'}, status=status.HTTP_404_NOT_FOUND)
+
+        books_list = []
+        for book in books:
+            editorial_data = {
+                'id': book.editorial.pk,
+                'name': book.editorial.name
+            }
+            gender_data = {
+                'id': book.gender.pk,
+                'name': book.gender.name,
+                'synopsis': book.gender.synopsis
+            }
+            book_data = {
+                'id': book.pk,
+                'title': book.title,
+                'subtitle': book.subtitle,
+                'isbn': book.isbn,
+                'author': book.author,
+                'publication_date': book.publication_date,
+                'synopsis': book.synopsis,
+                'editorial': editorial_data,
+                'gender': gender_data
+            }
+            books_list.append(book_data)
+        return Response({'All Books': books_list}, status=status.HTTP_200_OK)
 
 
-class GenderDelete(APIView):
-    authentication_classes = (JWTAuthentication, IsAdminUser,)
+class ListBookGenderSpecificGender(APIView):
+    authentication_classes = [JWTAuthentication]
 
-    def delete(self, request, gender_id):
+    def get(self, request, gender_id):
         token_decoder = TokenDecoder()
         raw_token = request.COOKIES.get('refresh')
         if not raw_token:
-            return Response({'Error': 'Token is not found in cookies.'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
         user_id = token_decoder.decode_token(raw_token)
         if user_id is None:
-            return Response({'Error': 'Token expired or invalid.'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        
         try:
-            admin_user = User.objects.get(id=user_id)
-            if admin_user.is_staff or admin_user.is_superuser:
-                gender = get_object_or_404(Gender, id=gender_id)
-                gender.delete()
-                return Response({'Message': 'The entered gender is deleted.'}, status=status.HTTP_200_OK)
-            return Response({'Error': 'The logged in user does not have the permissions to perform this action.'}, status=status.HTTP_401_UNAUTHORIZED)
+            user_instance = User.objects.get(id=user_id)
         except User.DoesNotExist:
-            return Response({'Error': 'The user entered does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'Error': 'No user associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            gender = get_object_or_404(Gender, id=gender_id)
         except Gender.DoesNotExist:
-            return Response({'Error': 'The introduced gender does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'Message': 'There is no literary gender associated with this ID.'}, status=status.HTTP_404_NOT_FOUND)
 
+        books_gender = Book.objects.filter(gender=gender)
+        if not books_gender:
+            return Response({'Message': 'There are no books associated with this gender ID.'}, status=status.HTTP_404_NOT_FOUND)
+            
+        book_list = []
+        for book in books_gender:
+            editorial_data = {
+                'id': book.editorial.pk,
+                'name': book.editorial.name
+            }
+            gender_data = {
+                'id': book.gender.pk,
+                'name': book.gender.name,
+                'synopsis': book.gender.synopsis
+            }
+            book_data = {
+                'id': book.pk,
+                'title': book.title,
+                'subtitle': book.subtitle,
+                'isbn': book.isbn,
+                'author': book.author,
+                'publication_date': book.publication_date,
+                'synopsis': book.synopsis,
+                'editorial': editorial_data,
+                'gender': gender_data
+            }
+            book_list.append(book_data)
+        return Response({'Books': book_list}, status=status.HTTP_200_OK)
+        
 
-class GenderUpdate(APIView):
-    authentication_classes = (JWTAuthentication, IsAdminUser,)
+class DetailBook(APIView):
+    authentication_classes = [JWTAuthentication]
 
-    def update(self, request, gender_id):
+    def get(self, request, book_id):
         token_decoder = TokenDecoder()
         raw_token = request.COOKIES.get('refresh')
         if not raw_token:
-            return Response({'Error': 'Token is not found in cookies.'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
         user_id = token_decoder.decode_token(raw_token)
         if user_id is None:
-            return Response({'Error': 'Token expired or invalid.'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        
         try:
-            admin_user = User.objects.get(id=user_id)
-            if admin_user.is_staff or admin_user.is_superuser:
-                gender = get_object_or_404(Gender, id=gender_id)
-                serializer = GenderSerializer(instance=gender, data=request.data)
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response({'Message': 'The entered gender has been updated.'}, status=status.HTTP_200_OK)
-                return Response({'Error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-            return Response({'Error': 'The logged in user does not have the permissions to perform this action.'}, status=status.HTTP_401_UNAUTHORIZED)
+            book = Book.objects.get(id=book_id)
+        except Book.DoesNotExist:
+            return Response({'Message': 'No book is associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
+
+        reviews = Review.objects.filter(book=book)
+        reviews_list = []
+        for review in reviews:
+            likes_ids = list(review.likes.values_list('id', flat=True))
+            review_data = {
+                'id': review.pk,
+                'comment': review.comment,
+                'stars': review.stars,
+                'likes': likes_ids,
+                'author_review': review.user_creator.pk,
+                'book': review.book.pk
+            }
+            reviews_list.append(review_data)      
+        editorial_data = {
+            'id': book.editorial.pk,
+            'name': book.editorial.name
+        }
+        gender_data = {
+            'id': book.gender.pk,
+            'name': book.gender.name,
+            'synopsis': book.gender.synopsis
+        }
+        book_data = {
+            'id': book.pk,
+            'title': book.title,
+            'subtitle': book.subtitle,
+            'isbn': book.isbn,
+            'author': book.author,
+            'publication_date': book.publication_date,
+            'synopsis': book.synopsis,
+            'editorial': editorial_data,
+            'gender': gender_data,
+            'reviews': reviews_list
+        }
+        return Response({'Book': book_data}, status=status.HTTP_200_OK)
+
+
+class DeleteBook(APIView):
+    authentication_classes = [JWTAuthentication]
+
+    def delete(self, request, book_id):
+        token_decoder = TokenDecoder()
+        raw_token = request.COOKIES.get('refresh')
+        if not raw_token:
+            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
+        user_id = token_decoder.decode_token(raw_token)
+        if user_id is None:
+            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        try:
+            admin_user = get_object_or_404(User, id=user_id)
         except User.DoesNotExist:
-            return Response({'Error': 'The user entered does not exist.'}, status=status.HTTP_404_NOT_FOUND)
-        except Gender.DoesNotExist:
-            return Response({'Error': 'The introduced gender does not exist.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'Error': 'No user associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if not (admin_user.is_superuser or admin_user.is_staff):
+            return Response({'Message': 'The logged in user does not have permissions to do this.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        book = get_object_or_404(Book, id=book_id)
+        book.delete()
+        return Response({'Message': 'Book deleted.'}, status=status.HTTP_200_OK)
 
 
-class PublishBook(APIView):
-    authentication_classes = (JWTAuthentication, IsAdminUser,)
-    
-    def post(self, request):
+
+class UpdateBook(APIView):
+    authentication_classes = [JWTAuthentication]
+
+    def put(self, request, book_id):
+        token_decoder = TokenDecoder()
+        raw_token = request.COOKIES.get('refresh')
+        if not raw_token:
+            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
+        user_id = token_decoder.decode_token(raw_token)
+        if user_id is None:
+            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        
         try:
-            token_decoder = TokenDecoder()
-            raw_token = request.COOKIES.get('refresh')
-            if not raw_token:
-                return Response({'error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
-            user_id = token_decoder.decode_token(raw_token)
-            if user_id is None:
-                return Response({'error': 'Token is not found in cookies.'}, status=status.HTTP_401_UNAUTHORIZED)
-            serializer = BookSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response({'message': 'Book published.'}, status=status.HTTP_201_CREATED)
-        except TokenError as error_token:
-            return Response({'message': 'Invalid refresh token', 'error': str(error_token)},status=status.HTTP_400_BAD_REQUEST)
+            admin_user_instance = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'Error': 'No user associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
 
-# TODO: List of books
+        try:
+            book_instance = Book.objects.get(id=book_id)
+        except Book.DoesNotExist:
+            return Response({'Message': 'No book is associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not (admin_user_instance.is_superuser or admin_user_instance.is_staff):
+            return Response({'Message': 'The logged in user does not have permissions to do this.'}, status=status.HTTP_401_UNAUTHORIZED)
         
-# TODO: Detail of books
-        
-# TODO: Delete of books for admins
-        
-# TODO: Update of books for admins
-        
+        serializer = BookSerializer(instance=book_instance, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'Message': 'Book updated.'}, status=status.HTTP_200_OK)
+        return Response({'Error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)

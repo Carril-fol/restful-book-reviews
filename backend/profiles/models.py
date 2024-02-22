@@ -3,8 +3,6 @@ import os
 
 from django.db import models
 from django.contrib.auth.models import User
-from django.utils.text import slugify
-from django.core.files.base import ContentFile
 
 from .settings import profile_pictures_per_user_directory
 
@@ -38,19 +36,3 @@ class Profile(models.Model):
 
     def __str__(self):
         return f'ID: {self.user.pk} / Profile: {self.first_name} {self.last_name}'
-    
-
-class Domicile(models.Model):
-    phone = models.CharField(max_length=14, null=False, blank=False)
-    country = models.CharField(max_length=255, null=False, blank=False)
-    city = models.CharField(max_length=255, null=False, blank=False)
-    province = models.CharField(max_length=255, null=False, blank=False)
-    locality = models.CharField(max_length=255, null=False, blank=False)
-    zip_code = models.CharField(max_length=4, null=False, blank=False)
-    street_main = models.CharField(max_length=255, null=False, blank=False)
-    street_height = models.CharField(max_length=4, null=False, blank=False)
-    street_1 = models.CharField(max_length=255, null=True, blank=True)
-    street_2 = models.CharField(max_length=255, null=True, blank=True)
-    apartment = models.CharField(max_length=2, null=True, blank=True)
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    

@@ -3,12 +3,11 @@ from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from .models import Profile, Domicile
+from .models import Profile
 from accounts.views import TokenDecoder
-from .serializers import ProfileSerializer, DomicileSerializer
+from .serializers import ProfileSerializer
 
 # Create your views here.
 """
@@ -32,7 +31,7 @@ class ProfileDetail(APIView):
 				'last_name': get_profile.last_name,
 				'img_profile': get_profile.img_profile.url,
 				'user': get_profile.user.pk
-				}
+			}
 			return Response({'User data': profile_data}, status=status.HTTP_200_OK)
 		except get_profile.DoesNotExist:
 			return Response({}, status=status.HTTP_404_NOT_FOUND)

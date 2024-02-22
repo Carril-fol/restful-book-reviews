@@ -39,7 +39,7 @@ class TokenDecoder(APIView):
             return Response({'user_id': user_id, 'message': 'Decoded token'})
 
 
-class RegisterView(APIView): # Tested
+class RegisterView(APIView):
     """
     This feature allows users to register and return a JWT for use in a frontend.
 
@@ -89,14 +89,14 @@ class RegisterView(APIView): # Tested
             return Response({'message': serializer.error_messages, 'Error detail': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class LoginView(TokenObtainPairView): # Tested
+class LoginView(TokenObtainPairView):
 
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
         return Response({'access': response.data['access'], 'refresh': response.data['refresh']},status=status.HTTP_200_OK)
     
 
-class LogoutView(TokenBlacklistView): # Not tested
+class LogoutView(TokenBlacklistView):
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request):
@@ -104,8 +104,8 @@ class LogoutView(TokenBlacklistView): # Not tested
             if not request.user.is_authenticated:
                 return Response({'error': 'User is not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
             token_decoder = TokenDecoder()
-            token = request.COOKIES.get('refresh')
-            if not token:
+            raw_token = request.COOKIES.get('refresh')
+            if not raw_token:
                 return Response({'error': 'Token is not found in cookies.'}, status=status.HTTP_401_UNAUTHORIZED)
             super().post(request)
             return Response({'message': 'Successful logout'},status=status.HTTP_200_OK)
