@@ -6,17 +6,14 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_simplejwt.views import TokenBlacklistView
-from rest_framework_simplejwt.tokens import TokenError
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 import jwt
 from .serializers import AccountSerializer
-from profiles.models import Profile
 
 # Create your views here.
 class TokenDecoder(APIView):
-    authentication_classes = (JWTAuthentication,)
+    authentication_classes = [JWTAuthentication]
 
     def decode_token(self, token):
         try:
@@ -86,59 +83,85 @@ class RegisterView(APIView):
             response = token_pair_view(token_request)
             return Response({'access': response.data['access'], 'refresh': response.data['refresh']}, status=status.HTTP_201_CREATED)
         else:
-            return Response({'message': serializer.error_messages, 'Error detail': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'Message': serializer.error_messages, 'Error detail': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginView(TokenObtainPairView):
+    """
+    This function allows users to log in with their credentials and return JWT tokens for use.
+
+    Example:
+
+    ```
+    POST: accounts/api/login/
+
+    Application data:
+    {
+        "username": "Username from the user",
+        "password": "Password from the user",
+    }
+
+    Successful response (code 201 - Created):
+    {
+        "access": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6Im5hbWUiLCJzdWIiOjEsImV4cCI6MTYzNjU4MTg0MCwianRpIjoiZDYwNzI3YjQ1NzY3NDEyNGFkZjRhOWRlYmZhODRiM2MifQ._bMepZtOkryVCeUZLlGyfgzInqk7KRJgkHau4Mn1o3E",
+        "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6Im5hbWUiLCJzdWIiOjEsImV4cCI6MTYzNjU4MTg0MCwianRpIjoiZDYwNzI3YjQ1NzY3NDEyNGFkZjRhOWRlYmZhODRiM2MifQ._bMepZtOkryVCeUZLlGyfgzInqk7KRJgkHau4Mn1o3E"
+    }
+
+    Response with validation errors (code 401 - Unauthorized):
+    {
+        "detail": "No active account found with the given credentials"
+    }
+    ```
+    """
 
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
         return Response({'access': response.data['access'], 'refresh': response.data['refresh']},status=status.HTTP_200_OK)
     
 
-class LogoutView(TokenBlacklistView):
-    authentication_classes = (JWTAuthentication,)
+class LogoutView(APIView):
+    """
+    This function allows users to logout from their accounts, this is through the deletion of jwt token in cookies.
+
+    ```
+    POST: accounts/api/loogut/
+
+    Cookies data:
+    {
+        "refresh": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VybmFtZSI6Im5hbWUiLCJzdWIiOjEsImV4cCI6MTYzNjU4MTg0MCwianRpIjoiZDYwNzI3YjQ1NzY3NDEyNGFkZjRhOWRlYmZhODRiM2MifQ._bMepZtOkryVCeUZLlGyfgzInqk7KRJgkHau4Mn1o3E",
+    }
+
+    Successful response (code 201 - Created):
+    {
+        'Message': 'Successful logout'
+    }
+
+    Response with validation errors (code 400 - Bad request):
+    {
+        "Error": "Token is not found in cookies."
+    }
+
+    Response with validation errors (code 401 - Unauthorized):
+    {
+        "Error": "Token invalid"
+    }
+    ```
+    """
 
     def post(self, request):
-        try:
-            if not request.user.is_authenticated:
-                return Response({'error': 'User is not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
-            token_decoder = TokenDecoder()
-            raw_token = request.COOKIES.get('refresh')
-            if not raw_token:
-                return Response({'error': 'Token is not found in cookies.'}, status=status.HTTP_401_UNAUTHORIZED)
-            super().post(request)
-            return Response({'message': 'Successful logout'},status=status.HTTP_200_OK)
-        except TokenError as error_token:
-            return Response({'message': 'Invalid refresh token', 'error': str(error_token)},status=status.HTTP_400_BAD_REQUEST)
-        
-
-class DeleteAccount(APIView):
-    authentication_classes = (JWTAuthentication,)
-     
-    def delete(self, request):
         token_decoder = TokenDecoder()
-        raw_token = request.COOKIES.get('refresh')
-        if not raw_token:
-            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = token_decoder.decode_token(raw_token)
+        refresh_token = request.COOKIES.get('refresh')
+        if not refresh_token:
+            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_400_BAD_REQUEST)
+        user_id = token_decoder.decode_token(refresh_token)
         if user_id is None:
-            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'Error': 'Token invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        
         try:
-            get_profile = Profile.objects.get(user=user_id)
-            get_user = User.objects.get(id=user_id)
-            data_accounts_deleted = {
-                'username': get_user.username,
-                'email': get_user.email,
-                'first_name': get_user.first_name,
-                'last_name': get_user.last_name
-            }
-            if get_profile.user.pk == get_user.pk:
-                get_profile.delete()
-                get_user.delete()
-                return Response({'Message': 'Account and Profile deleted.', 'Account data': data_accounts_deleted}, status=status.HTTP_200_OK)
-            return
-        except Profile.DoesNotExist:
-            return Response({'Message': 'Profile not found'}, status=status.HTTP_404_NOT_FOUND)
+            user_instance = User.objects.get(id=user_id)
         except User.DoesNotExist:
-            return Response({'Message': 'User not in the database'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'Error': 'No user associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
+
+        response = Response({'Message': 'Successful logout'}, status=status.HTTP_200_OK)
+        response.delete_cookie('refresh')
+        return response

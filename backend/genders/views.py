@@ -78,6 +78,7 @@ class GenderDetail(APIView):
             }
             books_list.append(book_data)
         gender_data = {
+            'id': gender.pk,
             'gender': gender.name,
             'synopsis': gender.synopsis
         }
@@ -98,12 +99,9 @@ class GenderList(APIView):
             return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
 
         try:
-            admin_user_instance = User.objects.get(id=user_id)
+            user_instance = User.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({'Error': 'The user entered does not exist.'}, status=status.HTTP_404_NOT_FOUND)
-
-        if not (admin_user_instance.is_superuser or admin_user_instance.is_staff):
-            return Response({'Error': 'The logged in user does not have the permissions to perform this action.'}, status=status.HTTP_401_UNAUTHORIZED)
         
         genders = Gender.objects.all()
         genders_data_list = []

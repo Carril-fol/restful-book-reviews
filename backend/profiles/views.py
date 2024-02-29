@@ -24,6 +24,8 @@ class ProfileDetail(APIView):
 		user_id = token_decoder.decode_token(raw_token)
 		if user_id is None:
 			return Response({'error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+		
+        # TODO: Fix try and except
 		try:
 			get_profile = get_object_or_404(Profile, id=user_id)
 			profile_data = {
@@ -48,6 +50,8 @@ class ProfileUpdate(APIView):
 		user_id = token_decoder.decode_token(raw_token)
 		if user_id is None:
 			return Response({'error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+		
+        # TODO: Make try and except
 		profile_id = get_object_or_404(Profile, id=user_id)
 
 		if profile_id.user.pk == user_id:

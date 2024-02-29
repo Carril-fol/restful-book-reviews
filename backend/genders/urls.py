@@ -14,7 +14,7 @@ urlpatterns = [
       name='gender-detail'
     ),
     path(
-      'api/genders/',
+      'api/list-of-genders/',
       GenderList.as_view(),
       name='gender-list'
     ),

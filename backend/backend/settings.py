@@ -89,11 +89,11 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql', 
-        'NAME': '',
-        'USER': '',
-        'PASSWORD': '',
-        'HOST': '',
-        'PORT': '',
+        'NAME': 'books-rest-api',
+        'USER': 'root',
+        'PASSWORD': '2337',
+        'HOST': 'localhost',
+        'PORT': '3306',
     }
 }
 
@@ -146,6 +146,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
 }
+
 
 # JWT Settings
 # https://django-rest-framework-simplejwt.readthedocs.io/en/latest/

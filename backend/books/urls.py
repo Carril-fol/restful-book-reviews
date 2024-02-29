@@ -16,7 +16,7 @@ urlpatterns = [
     ),
     path(
       'api/books/gender/<int:gender_id>/',
-      ListBookGenderSpecificGender.as_view(),
+      ListBookSpecificGender.as_view(),
       name='books-specific-gender'
     ),
     path(
@@ -32,6 +32,6 @@ urlpatterns = [
     path(
       'api/update/book/<int:book_id>/',
       UpdateBook.as_view(),
-      name='book-builder'
+      name='book-updater'
     )
 ]

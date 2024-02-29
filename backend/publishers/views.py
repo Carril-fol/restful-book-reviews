@@ -66,12 +66,9 @@ class DetailPublisher(APIView):
 
 
         books_from_publisher = Book.objects.filter(editorial=publisher_instance.pk)
-        if not books_from_publisher:
-            return Response({'Message': 'No books from the respective publisher'}, status=status.HTTP_400_BAD_REQUEST)
-
+        
         reviews_list = []
         books_list = []
-
         for book in books_from_publisher:
                 
             reviews = Review.objects.filter(book=book.pk)
@@ -193,8 +190,6 @@ class ListBooksPublisher(APIView):
             return Response({'Message': 'There is no publisher associated with the ID entered.'}, status=status.HTTP_404_NOT_FOUND)
 
         books_from_publisher = Book.objects.filter(editorial=publisher_instance.pk)
-        if not books_from_publisher:
-            return Response({'Message': 'No books from the respective publisher'}, status=status.HTTP_400_BAD_REQUEST)
 
         reviews_list = []
         books_list = []

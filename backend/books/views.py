@@ -62,9 +62,6 @@ class AllBooksList(APIView):
             return Response({'Error': 'No user associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
 
         books = Book.objects.all()
-        if not books:
-            return Response({'Message': 'No books for the moment.'}, status=status.HTTP_404_NOT_FOUND)
-
         books_list = []
         for book in books:
             editorial_data = {
@@ -91,7 +88,7 @@ class AllBooksList(APIView):
         return Response({'All Books': books_list}, status=status.HTTP_200_OK)
 
 
-class ListBookGenderSpecificGender(APIView):
+class ListBookSpecificGender(APIView):
     authentication_classes = [JWTAuthentication]
 
     def get(self, request, gender_id):
@@ -115,7 +112,7 @@ class ListBookGenderSpecificGender(APIView):
 
         books_gender = Book.objects.filter(gender=gender)
         if not books_gender:
-            return Response({'Message': 'There are no books associated with this gender ID.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'Message': 'There are no books associated with this gender ID.'}, status=status.HTTP_200_OK)
             
         book_list = []
         for book in books_gender:
@@ -163,12 +160,11 @@ class DetailBook(APIView):
         reviews = Review.objects.filter(book=book)
         reviews_list = []
         for review in reviews:
-            likes_ids = list(review.likes.values_list('id', flat=True))
             review_data = {
                 'id': review.pk,
                 'comment': review.comment,
                 'stars': review.stars,
-                'likes': likes_ids,
+                'likes': review.likes_count(),
                 'author_review': review.user_creator.pk,
                 'book': review.book.pk
             }
