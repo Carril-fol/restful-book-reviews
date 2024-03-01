@@ -106,14 +106,11 @@ class ListBookSpecificGender(APIView):
             return Response({'Error': 'No user associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
 
         try:
-            gender = get_object_or_404(Gender, id=gender_id)
+            gender = Gender.objects.get(id=gender_id).pk
         except Gender.DoesNotExist:
             return Response({'Message': 'There is no literary gender associated with this ID.'}, status=status.HTTP_404_NOT_FOUND)
 
         books_gender = Book.objects.filter(gender=gender)
-        if not books_gender:
-            return Response({'Message': 'There are no books associated with this gender ID.'}, status=status.HTTP_200_OK)
-            
         book_list = []
         for book in books_gender:
             editorial_data = {
@@ -157,7 +154,7 @@ class DetailBook(APIView):
         except Book.DoesNotExist:
             return Response({'Message': 'No book is associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
 
-        reviews = Review.objects.filter(book=book)
+        reviews = Review.objects.filter(book=book.pk)
         reviews_list = []
         for review in reviews:
             review_data = {
@@ -206,7 +203,7 @@ class DeleteBook(APIView):
             return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
         
         try:
-            admin_user = get_object_or_404(User, id=user_id)
+            admin_user = User.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({'Error': 'No user associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
         

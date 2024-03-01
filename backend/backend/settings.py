@@ -88,15 +88,14 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql', 
-        'NAME': 'books-rest-api',
-        'USER': 'root',
-        'PASSWORD': '2337',
+        'ENGINE': 'django.db.backends.postgresql', 
         'HOST': 'localhost',
-        'PORT': '3306',
+        'PORT': '5432',
+        'NAME': 'books-rest-api',
+        'USER': 'postgres',
+        'PASSWORD': '2337',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators

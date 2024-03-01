@@ -6,13 +6,14 @@ name = "pypi"
 [packages]
 django = "*"
 djangorestframework = "*"
-mysqlclient = "*"
 djangorestframework-simplejwt = "*"
 python-decouple = "*"
 pillow = "*"
 requests = "*"
 drf-yasg = "*"
 pydub = "*"
+psycopg2 = "*"
+psycopg2-binary = "*"
 
 [dev-packages]
 

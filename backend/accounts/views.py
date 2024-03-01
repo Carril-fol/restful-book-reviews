@@ -1,3 +1,6 @@
+from datetime import datetime
+
+
 from django.conf import settings
 from django.contrib.auth.models import User
 
@@ -29,11 +32,10 @@ class TokenDecoder(APIView):
         token = request.COOKIES.get('refresh')
         if not token:
             return Response({'Error': 'Token not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-        else:
-            user_id = self.decode_token(token)
-            if user_id is None:
-                return Response({'Error': 'Token not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-            return Response({'user_id': user_id, 'message': 'Decoded token'})
+        user_id = self.decode_token(token)
+        if user_id is None:
+            return Response({'Error': 'Token not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({'user_id': user_id, 'message': 'Decoded token'})
 
 
 class RegisterView(APIView):

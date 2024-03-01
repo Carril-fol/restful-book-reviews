@@ -12,7 +12,7 @@ from profiles.models import Profile
 
 # Create your tests here.
 
-class AccountsTestsCase(APITestCase):
+class RegisterTestCase(APITestCase):
     
     def setUp(self):
         self.account_data = {
@@ -22,10 +22,6 @@ class AccountsTestsCase(APITestCase):
             "first_name": "Test",
             "last_name": "Case",
             "email": "test@gmail.com"
-        }
-        self.login_data = {
-            'username': self.account_data['username'],
-            'password': self.account_data['password']
         }
 
     def test_register_view(self):
@@ -42,6 +38,7 @@ class AccountsTestsCase(APITestCase):
 class LoginTestCase(APITestCase):
 
     def setUp(self):
+        self.time_exp = datetime.datetime.now()
         self.account_data = {
             "username": "username test",
             "password": "passwordtest",

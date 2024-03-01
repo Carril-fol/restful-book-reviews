@@ -19,10 +19,10 @@ class GenderCreate(APIView):
 
     def post(self, request):
         token_decoder = TokenDecoder()
-        raw_token = request.COOKIES.get('refresh')
-        if not raw_token:
+        refresh_token = request.COOKIES.get('refresh')
+        if not refresh_token:
             return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = token_decoder.decode_token(raw_token)
+        user_id = token_decoder.decode_token(refresh_token)
         if user_id is None:
             return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
         
@@ -46,12 +46,17 @@ class GenderDetail(APIView):
     
     def get(self, request, gender_id):
         token_decoder = TokenDecoder()
-        raw_token = request.COOKIES.get('refresh')
-        if not raw_token:
+        refresh_token = request.COOKIES.get('refresh')
+        if not refresh_token:
             return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = token_decoder.decode_token(raw_token)
+        user_id = token_decoder.decode_token(refresh_token)
         if user_id is None:
             return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        try:
+            user_instance = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({'Error': 'No user associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
         
         try:
             user_instance = User.objects.get(id=user_id)
