@@ -12,7 +12,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = '__all__'
         extra_kwargs = {
             'comment': {'required': False},
-            'stars': {'required': True},
+            'stars': {'required': False},
             'likes': {'required': False},
             'user_creator': {'required': True},
             'book': {'required': True}

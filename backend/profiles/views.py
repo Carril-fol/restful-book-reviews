@@ -14,9 +14,9 @@ from .serializers import ProfileSerializer
 Profile
 """
 class ProfileDetail(APIView):
-	authentication_classes = (JWTAuthentication,)
+	authentication_classes = [JWTAuthentication]
 
-	def get(self, request):
+	def get(self, request, profile_id):
 		token_decoder = TokenDecoder()
 		raw_token = request.COOKIES.get('refresh')
 		if not raw_token:
@@ -25,24 +25,24 @@ class ProfileDetail(APIView):
 		if user_id is None:
 			return Response({'error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
 		
-        # TODO: Fix try and except
 		try:
-			get_profile = get_object_or_404(Profile, id=user_id)
-			profile_data = {
-				'first_name': get_profile.first_name,
-				'last_name': get_profile.last_name,
-				'img_profile': get_profile.img_profile.url,
-				'user': get_profile.user.pk
-			}
-			return Response({'User data': profile_data}, status=status.HTTP_200_OK)
-		except get_profile.DoesNotExist:
-			return Response({}, status=status.HTTP_404_NOT_FOUND)
+			profile = Profile.objects.get(id=profile_id)
+		except Profile.DoesNotExist:
+			return Response({'Message': 'The ID entered does not belong to any user profile.'}, status=status.HTTP_404_NOT_FOUND)
+		
+		profile_data = {
+			'first_name': profile.first_name,
+			'last_name': profile.last_name,
+			'img_profile': profile.img_profile.url,
+			'user': profile.user.pk
+		}
+		return Response({'User data': profile_data}, status=status.HTTP_200_OK)
 		
 
 class ProfileUpdate(APIView):
-	authentication_classes = (JWTAuthentication,)
+	authentication_classes = [JWTAuthentication]
 
-	def put(self, request):
+	def put(self, request, profile_id):
 		token_decoder = TokenDecoder()
 		raw_token = request.COOKIES.get('refresh')
 		if not raw_token:
@@ -51,14 +51,13 @@ class ProfileUpdate(APIView):
 		if user_id is None:
 			return Response({'error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
 		
-        # TODO: Make try and except
-		profile_id = get_object_or_404(Profile, id=user_id)
+		try:
+			profile = Profile.objects.get(id=profile_id)
+		except Profile.DoesNotExist:
+			return Response({'Message': 'The ID entered does not belong to any user profile.'}, status=status.HTTP_404_NOT_FOUND)
 
-		if profile_id.user.pk == user_id:
-			serializer = ProfileSerializer(data=request.data, instance=profile_id)
-			if serializer.is_valid():
-				serializer.save()
-				return Response({'message': 'Profile updated'}, status=status.HTTP_200_OK)
-			return Response({'message': 'Error to update the task', 'error': serializer.error_messages}, status=status.HTTP_400_BAD_REQUEST)
-		return Response({'message': 'the entered object ID does not belong to the user'}, status=status.HTTP_401_UNAUTHORIZED)
-
+		serializer = ProfileSerializer(data=request.data, instance=profile.pk)
+		if serializer.is_valid():
+			serializer.save()
+			return Response({'Message': 'Profile updated'}, status=status.HTTP_200_OK)
+		return Response({'Message': 'Error to update the profile', 'error': serializer.error_messages}, status=status.HTTP_400_BAD_REQUEST)

@@ -39,7 +39,7 @@ class PublishReview(APIView):
         serializer = ReviewSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response({'Message': 'Review successfully published.'}, status=status.HTTP_200_OK)
+            return Response({'Message': 'Review successfully published.'}, status=status.HTTP_201_CREATED)
         return Response({'Message': 'An error occurred while publishing the review.', 'Detail error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
         
 
@@ -61,7 +61,7 @@ class DeleteReview(APIView):
             return Response({'Message': 'There is no review associated with the ID entered.'}, status=status.HTTP_404_NOT_FOUND)
         
         if review.user_creator.pk != user_id:
-            return Response({'Error': 'You do not have permission to delete this review.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'Error': 'You do not have permission to delete this review.'}, status=status.HTTP_401_UNAUTHORIZED)
         
         review.delete()
         return Response({'Message': 'Review successfully deleted.'}, status=status.HTTP_200_OK)

@@ -9,7 +9,7 @@ from books.models import Book
 class Review(models.Model):
     comment = models.TextField()
     stars = models.IntegerField()
-    likes = models.ManyToManyField(Profile, related_name='likes_reviews', blank=True)
+    likes = models.ManyToManyField(User, related_name='likes_reviews', blank=True)
     user_creator = models.ForeignKey(User, on_delete=models.CASCADE, null=False, blank=False)
     book = models.ForeignKey(Book, on_delete=models.CASCADE, null=False, blank=False)
 

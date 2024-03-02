@@ -4,12 +4,12 @@ from .views import *
 
 urlpatterns = [
     path(
-      'api/profile/detail/',
+      'api/profile/detail/<int:profile_id>/',
       ProfileDetail.as_view(),
       name='profile-detail'
     ),
     path(
-      'api/profile-update/',
+      'api/profile-update/<int:profile_id>/',
       ProfileUpdate.as_view(),
       name='profile-update'
     )

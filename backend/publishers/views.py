@@ -20,13 +20,13 @@ class CreatePublisher(APIView):
 
     def post(self, request):
         token_decoder = TokenDecoder()
-        raw_token = request.COOKIES.get('refresh')
-        if not raw_token:
+        refresh_token = request.COOKIES.get('refresh')
+        if not refresh_token:
             return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = token_decoder.decode_token(raw_token)
+        user_id = token_decoder.decode_token(refresh_token)
         if user_id is None:
             return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
-
+        
         try:            
             admin_user_instance = User.objects.get(id=user_id)
         except User.DoesNotExist:
