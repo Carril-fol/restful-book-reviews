@@ -7,13 +7,12 @@ name = "pypi"
 django = "*"
 djangorestframework = "*"
 djangorestframework-simplejwt = "*"
-python-decouple = "*"
 pillow = "*"
 requests = "*"
 drf-yasg = "*"
-pydub = "*"
 psycopg2 = "*"
 psycopg2-binary = "*"
+python-dotenv = "*"
 
 [dev-packages]
 
