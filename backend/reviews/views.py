@@ -90,7 +90,7 @@ class UpdateReview(APIView):
             return Response({'Message': 'The ID entered does not belong to any review.'}, status=status.HTTP_404_NOT_FOUND)
 
         if review.user_creator.pk != user_id:
-            return Response({'Error': 'You do not have permission to delete this review.'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'Error': 'You do not have permission to delete this review.'}, status=status.HTTP_401_UNAUTHORIZED)
             
         serializer = ReviewSerializer(instance=review, data=request.data)
         if serializer.is_valid():

@@ -4,17 +4,17 @@
 
 <div>
   <p align="center">
+    <a href="https://saythanks.io/to/bullredeyes@gmail.com">
+        <img src="https://img.shields.io/badge/Python-FFD43B?style=for-the-badge&logo=python&logoColor=blue" alt="Python">
+    </a>
     <a href="https://badge.fury.io/js/electron-markdownify">
-      <img src="https://img.shields.io/badge/Django-green?style=flat-square&logo=django&logoColor=white&labelColor=%2342b883&color=%2342b883"
-              alt="Django">
+      <img src="https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=green" alt="Django">
     </a>
     <a href="https://gitter.im/amitmerchant1990/electron-markdownify">
-            <img src="https://img.shields.io/badge/Django_Rest_Framework-red?style=flat-square&logo=django&logoColor=white&labelColor=%23f95959&color=%23f95959"
-                    alt="Django Rest Fremework">
+      <img src="https://img.shields.io/badge/django%20rest-ff1709?style=for-the-badge&logo=django&logoColor=white" alt="Django Rest Fremework">
     </a>
-    <a href="https://saythanks.io/to/bullredeyes@gmail.com">
-        <img src="https://img.shields.io/badge/Python-yellow?style=flat-square&logo=python&logoColor=white&labelColor=%235585b5&color=%23fcff82"
-                alt="Python">
+    <a>
+      <img src="https://img.shields.io/badge/MySQL-005C84?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL">
     </a>
   </p>
 </div>

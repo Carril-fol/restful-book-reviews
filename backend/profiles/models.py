@@ -14,7 +14,7 @@ class Profile(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, blank=False)
 
     def default_image(self):
-        default_img_profile_path = 'media/images/profiles/default_user_icon.jpg'
+        default_img_profile_path = 'media/images/profiles/default_user_icon.webp'
         default_img_set = None
         if not os.path.exists(default_img_profile_path):
             os.makedirs(os.path.dirname(default_img_profile_path), exist_ok=True)

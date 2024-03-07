@@ -6,13 +6,11 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from .models import Profile
-from accounts.views import TokenDecoder
 from .serializers import ProfileSerializer
+from accounts.views import TokenDecoder
+from reviews.models import Review
 
 # Create your views here.
-"""
-Profile
-"""
 class ProfileDetail(APIView):
 	authentication_classes = [JWTAuthentication]
 
@@ -28,13 +26,23 @@ class ProfileDetail(APIView):
 		try:
 			profile = Profile.objects.get(id=profile_id)
 		except Profile.DoesNotExist:
-			return Response({'Message': 'The ID entered does not belong to any user profile.'}, status=status.HTTP_404_NOT_FOUND)
-		
+			return Response({'Message': 'The ID entered does not belong to any user profile.'}, status=status.HTTP_404_NOT_FOUND)	
+		reviews = Review.objects.filter(user_creator=profile.user.pk)
+		reviews_list = []
+		for review in reviews:
+			review_data = {
+				'id': review.pk,
+				'comment': review.comment,
+				'stars': review.stars,
+				'likes': review.likes_count()
+            }
+			reviews_list.append(review_data)	
 		profile_data = {
 			'first_name': profile.first_name,
 			'last_name': profile.last_name,
 			'img_profile': profile.img_profile.url,
-			'user': profile.user.pk
+			'user': profile.user.pk,
+			'reviews': reviews_list
 		}
 		return Response({'User data': profile_data}, status=status.HTTP_200_OK)
 		
@@ -55,9 +63,12 @@ class ProfileUpdate(APIView):
 			profile = Profile.objects.get(id=profile_id)
 		except Profile.DoesNotExist:
 			return Response({'Message': 'The ID entered does not belong to any user profile.'}, status=status.HTTP_404_NOT_FOUND)
-
-		serializer = ProfileSerializer(data=request.data, instance=profile.pk)
+		
+		if profile.user.pk != user_id:
+			return Response({'Message': 'The ID entered not belong to the user creator.'}, status=status.HTTP_401_UNAUTHORIZED)
+		
+		serializer = ProfileSerializer(instance=profile, data=request.data)
 		if serializer.is_valid():
 			serializer.save()
 			return Response({'Message': 'Profile updated'}, status=status.HTTP_200_OK)
-		return Response({'Message': 'Error to update the profile', 'error': serializer.error_messages}, status=status.HTTP_400_BAD_REQUEST)
+		return Response({'Message': 'Error to update the profile', 'error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)

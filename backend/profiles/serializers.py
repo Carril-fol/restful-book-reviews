@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.serializers import ValidationError
 
 from .models import Profile
 
@@ -10,15 +11,18 @@ class ProfileSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'first_name': {'required': True},
             'last_name': {'required': True},
-            'img_profile': {'required': False}
+            'img_profile': {'required': False},
+            'user': {'required': True}
         }
 
     def validate_first_name(self, validate_data):
-        if len(str(self.initial_data['first_name'])) <= 1:
-            raise serializers.ValidationError('The name cannot be incomplete')
-        return validate_data
+        validate_data = str(self.initial_data['first_name'])
+        if len(validate_data) <= 1:
+            raise ValidationError('The name cannot be incomplete')
+        return (validate_data.capitalize())
 
     def validate_last_name(self, validate_data):
-        if len(str(self.initial_data['last_name'])) <= 1:
-            raise serializers.ValidationError('The last name cannot be incomplete.')
-        return validate_data
+        validate_data = str(self.initial_data['last_name'])
+        if len(validate_data) <= 1:
+            raise ValidationError('The last name cannot be incomplete.')
+        return (validate_data.capitalize())
