@@ -6,7 +6,7 @@ from rest_framework.response import Response
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from accounts.views import TokenDecoder
+from accounts.views import TokenView
 from books.models import Book
 
 from .models import Gender
@@ -18,14 +18,14 @@ class GenderCreate(APIView):
     authentication_classes = [JWTAuthentication]
 
     def post(self, request):
-        token_decoder = TokenDecoder()
-        refresh_token = request.COOKIES.get('refresh')
-        if not refresh_token:
-            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = token_decoder.decode_token(refresh_token)
-        if user_id is None:
-            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        tokens = TokenView().get(request)
+        tokens_valid = TokenView().valid_tokens(tokens)
+        if not tokens_valid:
+            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
+            return response
         
+        user_id = TokenView().decode_token(tokens[1])
+
         try:
             admin_user_instance = User.objects.get(id=user_id)
         except User.DoesNotExist:
@@ -45,13 +45,13 @@ class GenderDetail(APIView):
     authentication_classes = [JWTAuthentication]
     
     def get(self, request, gender_id):
-        token_decoder = TokenDecoder()
-        refresh_token = request.COOKIES.get('refresh')
-        if not refresh_token:
-            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = token_decoder.decode_token(refresh_token)
-        if user_id is None:
-            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        tokens = TokenView().get(request)
+        tokens_valid = TokenView().valid_tokens(tokens)
+        if not tokens_valid:
+            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
+            return response
+        
+        user_id = TokenView().decode_token(tokens[1])
         
         try:
             user_instance = User.objects.get(id=user_id)
@@ -95,14 +95,14 @@ class GenderList(APIView):
     authentication_classes = [JWTAuthentication]
 
     def get(self, request):
-        token_decoder = TokenDecoder()
-        raw_token = request.COOKIES.get('refresh')
-        if not raw_token:
-            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = token_decoder.decode_token(raw_token)
-        if user_id is None:
-            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        tokens = TokenView().get(request)
+        tokens_valid = TokenView().valid_tokens(tokens)
+        if not tokens_valid:
+            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
+            return response
 
+        user_id = TokenView().decode_token(tokens[1])
+        
         try:
             user_instance = User.objects.get(id=user_id)
         except User.DoesNotExist:
@@ -126,13 +126,13 @@ class GenderDelete(APIView):
     authentication_classes = [JWTAuthentication]
 
     def delete(self, request, gender_id):
-        token_decoder = TokenDecoder()
-        raw_token = request.COOKIES.get('refresh')
-        if not raw_token:
-            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = token_decoder.decode_token(raw_token)
-        if user_id is None:
-            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        tokens = TokenView().get(request)
+        tokens_valid = TokenView().valid_tokens(tokens)
+        if not tokens_valid:
+            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
+            return response
+        
+        user_id = TokenView().decode_token(tokens[1])
         
         try:
             admin_user_instance = User.objects.get(id=user_id)
@@ -156,14 +156,14 @@ class GenderUpdate(APIView):
     authentication_classes = [JWTAuthentication]
 
     def put(self, request, gender_id):
-        token_decoder = TokenDecoder()
-        raw_token = request.COOKIES.get('refresh')
-        if not raw_token:
-            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = token_decoder.decode_token(raw_token)
-        if user_id is None:
-            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
-
+        tokens = TokenView().get(request)
+        tokens_valid = TokenView().valid_tokens(tokens)
+        if not tokens_valid:
+            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
+            return response
+        
+        user_id = TokenView().decode_token(tokens[1])
+        
         try:
             admin_user = User.objects.get(id=user_id)
         except User.DoesNotExist:

@@ -6,27 +6,26 @@ from rest_framework.response import Response
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from .serializers import PublisherSerializer
-from .models import Publisher
-
 from reviews.models import Review
 from books.models import Book
-from accounts.views import TokenDecoder
+from accounts.views import TokenView
 
+from .serializers import PublisherSerializer
+from .models import Publisher
 
 # Create your views here.
 class CreatePublisher(APIView):
     authentication_classes = [JWTAuthentication]
 
     def post(self, request):
-        token_decoder = TokenDecoder()
-        refresh_token = request.COOKIES.get('refresh')
-        if not refresh_token:
-            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = token_decoder.decode_token(refresh_token)
-        if user_id is None:
-            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        tokens = TokenView().get(request)
+        tokens_valid = TokenView().valid_tokens(tokens)
+        if not tokens_valid:
+            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
+            return response
         
+        user_id = TokenView().decode_token(tokens[1])
+
         try:            
             admin_user_instance = User.objects.get(id=user_id)
         except User.DoesNotExist:
@@ -46,13 +45,13 @@ class DetailPublisher(APIView):
     authentication_classes = [JWTAuthentication]
 
     def get(self, request, publisher_id):
-        token_decoder = TokenDecoder()
-        raw_token = request.COOKIES.get('refresh')
-        if not raw_token:
-            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = token_decoder.decode_token(raw_token)
-        if user_id is None:
-            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        tokens = TokenView().get(request)
+        tokens_valid = TokenView().valid_tokens(tokens)
+        if not tokens_valid:
+            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
+            return response
+        
+        user_id = TokenView().decode_token(tokens[1])
 
         try:
             user_instance = User.objects.get(id=user_id)
@@ -70,7 +69,6 @@ class DetailPublisher(APIView):
         reviews_list = []
         books_list = []
         for book in books_from_publisher:
-                
             reviews = Review.objects.filter(book=book.pk)
             for review in reviews:
                 review_data = {
@@ -81,7 +79,6 @@ class DetailPublisher(APIView):
                         'book_id': review.book.pk
                         }
                 reviews_list.append(review_data)
-                
             book_data = {
                     'id': book.pk,
                     'title': book.title,
@@ -94,7 +91,6 @@ class DetailPublisher(APIView):
                     'reviews': reviews_list
                 }
             books_list.append(book_data)
-            
         editorial_data = {
                 'name': publisher_instance.name,
                 'books': books_list
@@ -106,13 +102,13 @@ class DeletePublisher(APIView):
     authentication_classes = [JWTAuthentication]
 
     def delete(self, request, publisher_id):
-        token_decoder = TokenDecoder()
-        raw_token = request.COOKIES.get('refresh')
-        if not raw_token:
-            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = token_decoder.decode_token(raw_token)
-        if user_id is None:
-            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        tokens = TokenView().get(request)
+        tokens_valid = TokenView().valid_tokens(tokens)
+        if not tokens_valid:
+            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
+            return response
+        
+        user_id = TokenView().decode_token(tokens[1])
 
         try:
             admin_user_instance = User.objects.get(id=user_id)
@@ -135,13 +131,13 @@ class UpdatePublisher(APIView):
     authentication_classes = [JWTAuthentication]
 
     def put(self, request, publisher_id):
-        token_decoder = TokenDecoder()
-        raw_token = request.COOKIES.get('refresh')
-        if not raw_token:
-            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = token_decoder.decode_token(raw_token)
-        if user_id is None:
-            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        tokens = TokenView().get(request)
+        tokens_valid = TokenView().valid_tokens(tokens)
+        if not tokens_valid:
+            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
+            return response
+        
+        user_id = TokenView().decode_token(tokens[1])
 
         try:
             admin_user_instance = User.objects.get(id=user_id)
@@ -171,13 +167,13 @@ class ListBooksPublisher(APIView):
     authentication_classes = [JWTAuthentication]
 
     def get(self, request, publisher_id):
-        token_decoder = TokenDecoder()
-        raw_token = request.COOKIES.get('refresh')
-        if not raw_token:
-            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = token_decoder.decode_token(raw_token)
-        if user_id is None:
-            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        tokens = TokenView().get(request)
+        tokens_valid = TokenView().valid_tokens(tokens)
+        if not tokens_valid:
+            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
+            return response
+        
+        user_id = TokenView().decode_token(tokens[1])
 
         try:
             user_instance = User.objects.get(id=user_id)
@@ -194,7 +190,6 @@ class ListBooksPublisher(APIView):
         reviews_list = []
         books_list = []
         for book in books_from_publisher:
-                
             reviews = Review.objects.filter(book=book.pk)
             for review in reviews:
                 review_data = {
@@ -205,7 +200,6 @@ class ListBooksPublisher(APIView):
                     'book': review.book.pk
                     }
                 reviews_list.append(review_data)
-                
             book_data = {
                     'id': book.pk,
                     'title': book.title,

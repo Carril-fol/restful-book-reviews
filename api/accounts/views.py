@@ -6,33 +6,39 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework_simplejwt.exceptions import InvalidToken
 
 from .serializers import UserRegisterSerializer, UserLoginSerializer
-from .utils import generate_tokens
 
 # Create your views here.
-class TokenDecoder(APIView):
+class TokenView(APIView):
 
     def decode_token(self, token):
-        try:
-            decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
-            user_id = decoded_token.get('user_id')
-            return user_id
-        except jwt.ExpiredSignatureError:
-            return None
-        except jwt.InvalidTokenError:
-            return None
+        decoded_token = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
+        user_id = decoded_token.get('user_id')
+        return user_id
+
+    def generate_tokens(self, user):
+        refresh_token = RefreshToken.for_user(user)
+        access_token = AccessToken.for_user(user)
+        tokens = {
+            'access': str(access_token),
+            'refresh': str(refresh_token)
+        }
+        return tokens
 
     def get(self, request):
-        token = request.COOKIES.get('refresh')
-        if not token:
-            return Response({'Error': 'Token not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = self.decode_token(token)
-        if user_id is None:
-            return Response({'Error': 'Token not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-        return Response({'user_id': user_id, 'message': 'Decoded token'})
+        refresh_token = request.COOKIES.get('refresh')
+        access_token = request.COOKIES.get('access')
+        tokens = [access_token, refresh_token]
+        return tokens
+    
+    @staticmethod
+    def valid_tokens(tokens):
+        tokens_found = all(token is not None for token in tokens)
+        return tokens_found
+    
 
 class RegisterView(APIView):
     """
@@ -76,8 +82,7 @@ class RegisterView(APIView):
         if serializer.is_valid(raise_exception=True):
             serializer.check(data)
             serializer.save()
-
-            return Response({"Message": "User registered"}, status=status.HTTP_200_OK)
+            return Response({"Message": "User and profile created."}, status=status.HTTP_200_OK)
         return Response({"Error", serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -117,7 +122,7 @@ class LoginView(APIView):
         serializer = self.serializer_class(data=data)
         if serializer.is_valid(raise_exception=True):
             user_data = serializer.check_user_exists(data)
-            tokens = generate_tokens(user_data)
+            tokens = TokenView().generate_tokens(user_data)
             response = Response({'access': tokens['access'], 'refresh': tokens['refresh']}, status=status.HTTP_200_OK)
             response.set_cookie('access', tokens["access"])
             response.set_cookie('refresh', tokens["refresh"])
@@ -152,17 +157,17 @@ class LogoutView(APIView):
     ```
     """
     def post(self, request):
-        refresh_token = request.COOKIES.get('refresh')
-        access_token = request.COOKIES.get('access')
-        if refresh_token and access_token:
-            try:
-                token_to_blacklist = RefreshToken(refresh_token).blacklist()
-            except InvalidToken as error:
-                return Response({'Error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
-            
-            response = Response({'Message': 'Logout successfully'}, status=status.HTTP_200_OK)
-            response.delete_cookie('refresh')
-            response.delete_cookie('access')
+        tokens = TokenView().get(request)
+        tokens_valid = TokenView().valid_tokens(tokens)
+        if not tokens_valid:
+            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
             return response
-        response = Response({'Error': 'Token not found in cookies'}, status=status.HTTP_400_BAD_REQUEST)
+        refresh_token = tokens[1]
+        try:
+            token_to_blacklist = RefreshToken(refresh_token).blacklist()
+        except InvalidToken as error:
+            return Response({'Error': str(error)}, status=status.HTTP_400_BAD_REQUEST)
+        response = Response({'Message': 'Logout successfully'}, status=status.HTTP_200_OK)
+        response.delete_cookie('refresh')
+        response.delete_cookie('access')
         return response

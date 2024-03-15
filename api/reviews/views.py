@@ -6,7 +6,7 @@ from rest_framework.response import Response
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from accounts.views import TokenDecoder
+from accounts.views import TokenView
 from books.models import Book
 
 from .models import Review
@@ -18,14 +18,14 @@ class PublishReview(APIView):
     authentication_classes = [JWTAuthentication]
 
     def post(self, request, book_id):
-        token_decoder = TokenDecoder()
-        raw_token = request.COOKIES.get('refresh')
-        if not raw_token:
-            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = token_decoder.decode_token(raw_token)
-        if user_id is None:
-            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        tokens = TokenView().get(request)
+        tokens_valid = TokenView().valid_tokens(tokens)
+        if not tokens_valid:
+            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
+            return response
         
+        user_id = TokenView().decode_token(tokens[1])
+
         try:
             book_instace = Book.objects.get(id=book_id)
         except Book.DoesNotExist:
@@ -47,13 +47,13 @@ class DeleteReview(APIView):
     authentication_classes = [JWTAuthentication]
 
     def delete(self, request, review_id):
-        token_decoder = TokenDecoder()
-        raw_token = request.COOKIES.get('refresh')
-        if not raw_token:
-            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = token_decoder.decode_token(raw_token)
-        if user_id is None:
-            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        tokens = TokenView().get(request)
+        tokens_valid = TokenView().valid_tokens(tokens)
+        if not tokens_valid:
+            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
+            return response
+        
+        user_id = TokenView().decode_token(tokens[1])
         
         try:
             review = Review.objects.get(id=review_id)
@@ -71,13 +71,13 @@ class UpdateReview(APIView):
     authentication_classes = [JWTAuthentication]
 
     def put(self, request, review_id):
-        token_decoder = TokenDecoder()
-        raw_token = request.COOKIES.get('refresh')
-        if not raw_token:
-            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = token_decoder.decode_token(raw_token)
-        if user_id is None:
-            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        tokens = TokenView().get(request)
+        tokens_valid = TokenView().valid_tokens(tokens)
+        if not tokens_valid:
+            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
+            return response
+        
+        user_id = TokenView().decode_token(tokens[1])
 
         try:
             user_instance = User.objects.get(id=user_id)
@@ -103,13 +103,13 @@ class ListReviewsBookSpecific(APIView):
     authentication_classes = [JWTAuthentication]
 
     def get(self, request, book_id):
-        token_decoder = TokenDecoder()
-        raw_token = request.COOKIES.get('refresh')
-        if not raw_token:
-            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = token_decoder.decode_token(raw_token)
-        if user_id is None:
-            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        tokens = TokenView().get(request)
+        tokens_valid = TokenView().valid_tokens(tokens)
+        if not tokens_valid:
+            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
+            return response
+        
+        user_id = TokenView().decode_token(tokens[1])
 
         try:
             book_instance = Book.objects.get(id=book_id)
@@ -134,13 +134,13 @@ class ListReviewsBookSpecific(APIView):
 class DetailReview(APIView):
 
     def get(self, request, review_id):
-        token_decoder = TokenDecoder()
-        raw_token = request.COOKIES.get('refresh')
-        if not raw_token:
-            return Response({'Error': 'Token is not found in cookies.' }, status=status.HTTP_401_UNAUTHORIZED)
-        user_id = token_decoder.decode_token(raw_token)
-        if user_id is None:
-            return Response({'Error': 'Token expired or invalid'}, status=status.HTTP_401_UNAUTHORIZED)
+        tokens = TokenView().get(request)
+        tokens_valid = TokenView().valid_tokens(tokens)
+        if not tokens_valid:
+            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
+            return response
+        
+        user_id = TokenView().decode_token(tokens[1])
 
         try:
             review = Review.objects.get(id=review_id)
