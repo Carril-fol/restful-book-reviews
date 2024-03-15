@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'accounts',
     'profiles',
     'drf_yasg',
@@ -88,11 +89,11 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {  
     'default': {  
         'ENGINE': 'django.db.backends.mysql',  
-        'NAME': '',  
-        'USER': '',  
-        'PASSWORD': '',  
-        'HOST': '',  
-        'PORT': ''
+        'NAME': 'books-rest-api',  
+        'USER': 'root',  
+        'PASSWORD': '2337',  
+        'HOST': 'localhost',  
+        'PORT': '8000'
     }  
 }
 

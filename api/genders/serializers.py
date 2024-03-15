@@ -12,10 +12,18 @@ class GenderSerializer(serializers.ModelSerializer):
             'synopsis' : {'required': True}
         }
     
-    def validate_gender(self, validate_data):
-        gender = validate_data['name']
-        if (len(gender)) > 0:
+    def validate_name(self, validate_data):
+        validate_data = self.initial_data['name']
+        if (len(validate_data)) <= 1:
             raise serializers.ValidationError('The name of the gender must have more than one character.')
-        elif (str(gender).isdigit()):
+        elif (str(validate_data).isdigit()):
             raise serializers.ValidationError('Book genres cannot have numbers, only letters.')
-        return gender
+        return validate_data
+
+    def validate_gender(self, validate_data):
+        validate_data = self.initial_data['gender']
+        if (len(validate_data)) <= 1:
+            raise serializers.ValidationError('The name of the gender must have more than one character.')
+        elif (str(validate_data).isdigit()):
+            raise serializers.ValidationError('Book genres cannot have numbers, only letters.')
+        return validate_data
