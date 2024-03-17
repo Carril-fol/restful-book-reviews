@@ -1,42 +1,31 @@
-from django.contrib.auth.models import User
-
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from accounts.views import TokenView
+from accounts.permissions import isVerified
 from books.models import Book
 
+from .permissions import hisReview
 from .models import Review
 from .serializers import ReviewSerializer
 
 
 # Create your views here.
 class PublishReview(APIView):
+    serializer_class = ReviewSerializer
     authentication_classes = [JWTAuthentication]
+    permission_classes = [isVerified]
 
     def post(self, request, book_id):
-        tokens = TokenView().get(request)
-        tokens_valid = TokenView().valid_tokens(tokens)
-        if not tokens_valid:
-            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-            return response
-        
-        user_id = TokenView().decode_token(tokens[1])
-
         try:
-            book_instace = Book.objects.get(id=book_id)
+            book_instance = Book.objects.get(id=book_id)
         except Book.DoesNotExist:
             return Response({'Message': 'No book is associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
-        
-        try:
-            user_instance = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response({'Message': 'The ID entered does not belong to any user.'}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = ReviewSerializer(data=request.data)
+        data = request.data
+        serializer = self.serializer_class(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response({'Message': 'Review successfully published.'}, status=status.HTTP_201_CREATED)
@@ -45,54 +34,30 @@ class PublishReview(APIView):
 
 class DeleteReview(APIView):
     authentication_classes = [JWTAuthentication]
+    permission_classes = [isVerified, hisReview]
 
     def delete(self, request, review_id):
-        tokens = TokenView().get(request)
-        tokens_valid = TokenView().valid_tokens(tokens)
-        if not tokens_valid:
-            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-            return response
-        
-        user_id = TokenView().decode_token(tokens[1])
-        
         try:
             review = Review.objects.get(id=review_id)
         except Review.DoesNotExist:
             return Response({'Message': 'There is no review associated with the ID entered.'}, status=status.HTTP_404_NOT_FOUND)
-        
-        if review.user_creator.pk != user_id:
-            return Response({'Error': 'You do not have permission to delete this review.'}, status=status.HTTP_401_UNAUTHORIZED)
         
         review.delete()
         return Response({'Message': 'Review successfully deleted.'}, status=status.HTTP_200_OK)
 
 
 class UpdateReview(APIView):
+    serializer_class = ReviewSerializer
     authentication_classes = [JWTAuthentication]
+    permission_classes = [isVerified, hisReview]
 
     def put(self, request, review_id):
-        tokens = TokenView().get(request)
-        tokens_valid = TokenView().valid_tokens(tokens)
-        if not tokens_valid:
-            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-            return response
-        
-        user_id = TokenView().decode_token(tokens[1])
-
-        try:
-            user_instance = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response({'Message': 'The ID entered does not belong to any user.'}, status=status.HTTP_404_NOT_FOUND)
-
         try:
             review = Review.objects.get(id=review_id)
         except Review.DoesNotExist:
             return Response({'Message': 'The ID entered does not belong to any review.'}, status=status.HTTP_404_NOT_FOUND)
-
-        if review.user_creator.pk != user_id:
-            return Response({'Error': 'You do not have permission to delete this review.'}, status=status.HTTP_401_UNAUTHORIZED)
             
-        serializer = ReviewSerializer(instance=review, data=request.data)
+        serializer = self.serializer_class(instance=review, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response({'Message': 'Successfully updated the review.'}, status=status.HTTP_200_OK)
@@ -101,16 +66,9 @@ class UpdateReview(APIView):
 
 class ListReviewsBookSpecific(APIView):
     authentication_classes = [JWTAuthentication]
+    permission_classes = [isVerified]
 
     def get(self, request, book_id):
-        tokens = TokenView().get(request)
-        tokens_valid = TokenView().valid_tokens(tokens)
-        if not tokens_valid:
-            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-            return response
-        
-        user_id = TokenView().decode_token(tokens[1])
-
         try:
             book_instance = Book.objects.get(id=book_id)
         except Book.DoesNotExist:
@@ -124,7 +82,7 @@ class ListReviewsBookSpecific(APIView):
                 'comment': review.comment,
                 'stars': review.stars,
                 'likes': review.likes_count(),
-                'author_review': review.user_creator.pk,
+                'profile_creator': review.profile_creator.pk,
                 'book': review.book.pk
             }
             list_reviews.append(review_data)
@@ -132,27 +90,20 @@ class ListReviewsBookSpecific(APIView):
 
 
 class DetailReview(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [isVerified]
 
     def get(self, request, review_id):
-        tokens = TokenView().get(request)
-        tokens_valid = TokenView().valid_tokens(tokens)
-        if not tokens_valid:
-            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-            return response
-        
-        user_id = TokenView().decode_token(tokens[1])
-
         try:
             review = Review.objects.get(id=review_id)
         except Review.DoesNotExist:
             return Response({'Message': 'There is no review with this ID entered.'}, status=status.HTTP_404_NOT_FOUND)
-            
         review_data = {
             'id': review.pk,
             'comment': review.comment,
             'stars': review.stars,
             'likes': review.likes_count(),
-            'author_review': review.user_creator.pk,
+            'profile_creator': review.profile_creator.pk,
             'book': review.book.pk
         }
         return Response({'Review detail': review_data}, status=status.HTTP_200_OK)

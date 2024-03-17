@@ -2,16 +2,18 @@ import requests
 import os
 
 from django.db import models
-from django.contrib.auth.models import User
 
-from .settings import profile_pictures_per_user_directory
+from accounts.models import UserCustom
+from .utils import profile_pictures_per_user_directory
 
 # Create your models here.
 class Profile(models.Model):
-    first_name = models.CharField(max_length=255, null=False, blank=False)
-    last_name = models.CharField(max_length=255, null=False, blank=False)
+    location = models.CharField(max_length=100, blank=True)
+    bio = models.TextField(blank=True)
+    birth_date = models.DateField(null=True, blank=True)
     img_profile = models.ImageField(upload_to=profile_pictures_per_user_directory, null=True, blank=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=False, blank=False)
+    followers = models.ManyToManyField(UserCustom, related_name='following', blank=True)
+    user = models.ForeignKey(UserCustom, on_delete=models.CASCADE, null=False, blank=False)
 
     def default_image(self):
         default_img_profile_path = 'media/images/profiles/default_user_icon.webp'
@@ -26,13 +28,10 @@ class Profile(models.Model):
         return default_img_profile_path
 
     def save(self, *args, **kwargs):
-        if not self.first_name or not self.last_name:
-            self.first_name = self.user.first_name
-            self.last_name = self.user.last_name
-        elif not self.img_profile:
+        if not self.img_profile:
             default_image_set = self.default_image()
             self.img_profile = default_image_set
         super(Profile, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f'ID: {self.user.pk} / Profile: {self.first_name} {self.last_name}'
+        return f'{self.user.username} / ID: {self.user.pk}'

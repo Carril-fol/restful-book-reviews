@@ -1,4 +1,3 @@
-from django.contrib.auth.models import User
 from django.db import models
 from django.core.exceptions import ValidationError
 
@@ -9,8 +8,8 @@ from books.models import Book
 class Review(models.Model):
     comment = models.TextField()
     stars = models.IntegerField()
-    likes = models.ManyToManyField(User, related_name='likes_reviews', blank=True)
-    user_creator = models.ForeignKey(User, on_delete=models.CASCADE, null=False, blank=False)
+    likes = models.ManyToManyField(Profile, related_name='likes_reviews', blank=True)
+    profile_creator = models.ForeignKey(Profile, on_delete=models.CASCADE, null=False, blank=False)
     book = models.ForeignKey(Book, on_delete=models.CASCADE, null=False, blank=False)
 
     def clean(self):
@@ -24,4 +23,4 @@ class Review(models.Model):
     
     def __str__(self):
         count_likes = self.likes_count()
-        return f'User: {self.user_creator}, Comment: {self.comment}, Likes review: {count_likes}, Stars: {self.stars}'
+        return f'User: {self.profile_creator}, Comment: {self.comment}, Likes review: {count_likes}, Stars: {self.stars}'

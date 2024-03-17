@@ -1,5 +1,4 @@
 from django.shortcuts import get_object_or_404
-from django.contrib.auth.models import User
 
 from rest_framework import status
 from rest_framework.views import APIView
@@ -7,66 +6,36 @@ from rest_framework.response import Response
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from accounts.views import TokenView
+from accounts.permissions import isVerified, isAdminCustom
 from genders.models import Gender
 from reviews.models import Review
 
 from .serializers import BookSerializer
 from .models import Book
 
-
 # Create your views here.
 class PublishBook(APIView):
+    serializer_class = BookSerializer
     authentication_classes = [JWTAuthentication]
+    permission_classes = [isAdminCustom]
     
     def post(self, request):
-        tokens = TokenView().get(request)
-        tokens_valid = TokenView().valid_tokens(tokens)
-        if not tokens_valid:
-            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-            return response
-        
-        user_id = TokenView().decode_token(tokens[1])
-        
-        try:
-            admin_user_instance = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response({'Error': 'No user associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
-
-        if not (admin_user_instance.is_staff or admin_user_instance.is_superuser):
-            return Response({'Error': 'The user does not have permissions for these actions.'}, status=status.HTTP_401_UNAUTHORIZED)
-
-        serializer = BookSerializer(data=request.data)
+        data = request.data
+        serializer = self.serializer_class(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response({'Message': 'Book published.'}, status=status.HTTP_201_CREATED)
-        return Response({'Message': 'Error to publish a book', 'Detail book': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-
+        return Response({'Error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class AllBooksList(APIView):
     authentication_classes = [JWTAuthentication]
+    permission_classes = [isVerified]
     
     def get(self, request):
-        tokens = TokenView().get(request)
-        tokens_valid = TokenView().valid_tokens(tokens)
-        if not tokens_valid:
-            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-            return response
-
-        user_id = TokenView().decode_token(tokens[1]) 
-        try:
-            user_instance = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response({'Error': 'No user associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
-
         books = Book.objects.all()
         books_list = []
         for book in books:
-            editorial_data = {
-                'id': book.editorial.pk,
-                'name': book.editorial.name
-            }
             gender_data = {
                 'id': book.gender.pk,
                 'name': book.gender.name,
@@ -80,7 +49,6 @@ class AllBooksList(APIView):
                 'author': book.author,
                 'publication_date': book.publication_date,
                 'synopsis': book.synopsis,
-                'editorial': editorial_data,
                 'gender': gender_data
             }
             books_list.append(book_data)
@@ -89,32 +57,16 @@ class AllBooksList(APIView):
 
 class ListBookSpecificGender(APIView):
     authentication_classes = [JWTAuthentication]
+    permission_classes = [isVerified]
 
     def get(self, request, gender_id):
-        tokens = TokenView().get(request)
-        tokens_valid = TokenView().valid_tokens(tokens)
-        if not tokens_valid:
-            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-            return response
-
-        user_id = TokenView().decode_token(tokens[1]) 
-        try:
-            user_instance = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response({'Error': 'No user associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
-
         try:
             gender = Gender.objects.get(id=gender_id).pk
         except Gender.DoesNotExist:
             return Response({'Message': 'There is no literary gender associated with this ID.'}, status=status.HTTP_404_NOT_FOUND)
-
         books_gender = Book.objects.filter(gender=gender)
         book_list = []
         for book in books_gender:
-            editorial_data = {
-                'id': book.editorial.pk,
-                'name': book.editorial.name
-            }
             gender_data = {
                 'id': book.gender.pk,
                 'name': book.gender.name,
@@ -128,7 +80,6 @@ class ListBookSpecificGender(APIView):
                 'author': book.author,
                 'publication_date': book.publication_date,
                 'synopsis': book.synopsis,
-                'editorial': editorial_data,
                 'gender': gender_data
             }
             book_list.append(book_data)
@@ -137,21 +88,13 @@ class ListBookSpecificGender(APIView):
 
 class DetailBook(APIView):
     authentication_classes = [JWTAuthentication]
+    permission_classes = [isVerified]
 
     def get(self, request, book_id):
-        tokens = TokenView().get(request)
-        tokens_valid = TokenView().valid_tokens(tokens)
-        if not tokens_valid:
-            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-            return response
-
-        user_id = TokenView().decode_token(tokens[1]) 
-
         try:
             book = Book.objects.get(id=book_id)
         except Book.DoesNotExist:
             return Response({'Message': 'No book is associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
-
         reviews = Review.objects.filter(book=book.pk)
         reviews_list = []
         for review in reviews:
@@ -164,10 +107,6 @@ class DetailBook(APIView):
                 'book': review.book.pk
             }
             reviews_list.append(review_data)      
-        editorial_data = {
-            'id': book.editorial.pk,
-            'name': book.editorial.name
-        }
         gender_data = {
             'id': book.gender.pk,
             'name': book.gender.name,
@@ -181,7 +120,6 @@ class DetailBook(APIView):
             'author': book.author,
             'publication_date': book.publication_date,
             'synopsis': book.synopsis,
-            'editorial': editorial_data,
             'gender': gender_data,
             'reviews': reviews_list
         }
@@ -190,56 +128,27 @@ class DetailBook(APIView):
 
 class DeleteBook(APIView):
     authentication_classes = [JWTAuthentication]
+    permission_classes = [isAdminCustom]
 
     def delete(self, request, book_id):
-        tokens = TokenView().get(request)
-        tokens_valid = TokenView().valid_tokens(tokens)
-        if not tokens_valid:
-            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-            return response
-
-        user_id = TokenView().decode_token(tokens[1]) 
-
-        try:
-            admin_user = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response({'Error': 'No user associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
-        
-        if not (admin_user.is_superuser or admin_user.is_staff):
-            return Response({'Message': 'The logged in user does not have permissions to do this.'}, status=status.HTTP_401_UNAUTHORIZED)
-
         book = get_object_or_404(Book, id=book_id)
         book.delete()
         return Response({'Message': 'Book deleted.'}, status=status.HTTP_200_OK)
 
 
-
 class UpdateBook(APIView):
+    serializer_class = BookSerializer
     authentication_classes = [JWTAuthentication]
+    permission_classes = [isAdminCustom]
 
     def put(self, request, book_id):
-        tokens = TokenView().get(request)
-        tokens_valid = TokenView().valid_tokens(tokens)
-        if not tokens_valid:
-            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-            return response
-
-        user_id = TokenView().decode_token(tokens[1]) 
-
-        try:
-            admin_user_instance = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response({'Error': 'No user associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
-
         try:
             book_instance = Book.objects.get(id=book_id)
         except Book.DoesNotExist:
             return Response({'Message': 'No book is associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
-
-        if not (admin_user_instance.is_superuser or admin_user_instance.is_staff):
-            return Response({'Message': 'The logged in user does not have permissions to do this.'}, status=status.HTTP_401_UNAUTHORIZED)
         
-        serializer = BookSerializer(instance=book_instance, data=request.data)
+        data = request.data
+        serializer = self.serializer_class(instance=book_instance, data=data)
         if serializer.is_valid():
             serializer.save()
             return Response({'Message': 'Book updated.'}, status=status.HTTP_200_OK)

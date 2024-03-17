@@ -3,28 +3,24 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from accounts.views import TokenView
+from accounts.permissions import isVerified
+from accounts.utils import TokenView
 from reviews.models import Review
 
+from .permissions import hisProfile
 from .models import Profile
-from .serializers import ProfileSerializer
+from .serializers import UpdateProfileSerializer
 
 # Create your views here.
 class ProfileDetail(APIView):
     authentication_classes = [JWTAuthentication]
+    permission_classes = [isVerified]
 
     def get(self, request, profile_id):
-        tokens = TokenView().get(request)
-        tokens_valid = TokenView().valid_tokens(tokens)
-        if not tokens_valid:
-            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-            return response
-        
         try:
             profile = Profile.objects.get(id=profile_id)
         except Profile.DoesNotExist:
             return Response({'Message': 'The ID entered does not belong to any user profile.'}, status=status.HTTP_404_NOT_FOUND)
-        
         reviews = Review.objects.filter(user_creator=profile.user.pk)
         reviews_list = []
         for review in reviews:
@@ -46,27 +42,22 @@ class ProfileDetail(APIView):
         
 
 class ProfileUpdate(APIView):
+    serializer_class = UpdateProfileSerializer
     authentication_classes = [JWTAuthentication]
+    permission_classes = [isVerified, hisProfile]
 
     def put(self, request, profile_id):
-        tokens = TokenView().get(request)
-        tokens_valid = TokenView().valid_tokens(tokens)
-        if not tokens_valid:
-            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-            return response
-        
-        user_id = TokenView().decode_token(tokens[1])
-
         try:
             profile = Profile.objects.get(id=profile_id)
         except Profile.DoesNotExist:
             return Response({'Message': 'The ID entered does not belong to any user profile.'}, status=status.HTTP_404_NOT_FOUND)
-        
-        if profile.user.pk != user_id:
-            return Response({'Message': 'The ID entered not belong to the user creator.'}, status=status.HTTP_401_UNAUTHORIZED)
-        
-        serializer = ProfileSerializer(instance=profile, data=request.data)
+
+        data = request.data
+        serializer = self.serializer_class(instance=profile, data=data)
         if serializer.is_valid():
             serializer.save()
             return Response({'Message': 'Profile updated'}, status=status.HTTP_200_OK)
         return Response({'Message': 'Error to update the profile', 'error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# TODO: Make function to follow profiles.

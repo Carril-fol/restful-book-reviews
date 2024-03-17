@@ -27,9 +27,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG')
+DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1']
 
 
 # Application definition
@@ -48,7 +48,6 @@ INSTALLED_APPS = [
     'profiles',
     'drf_yasg',
     'books',
-    'publishers',
     'genders',
     'reviews'
 ]
@@ -90,11 +89,11 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {  
     'default': {  
         'ENGINE': 'django.db.backends.mysql',  
-        'NAME': '',  
-        'USER': '',  
-        'PASSWORD': '',  
-        'HOST': '',  
-        'PORT': ''
+        'NAME': 'books_rest_api',  
+        'USER': 'root',  
+        'PASSWORD': '2337',  
+        'HOST': 'localhost',  
+        'PORT': '8000'
     }  
 }
 
@@ -191,3 +190,16 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainSlidingSerializer",
     "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
 }
+
+# Auth User Model
+
+AUTH_USER_MODEL = 'accounts.UserCustom'
+
+# Email configuration.
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'folco.carril@gmail.com'
+EMAIL_HOST_PASSWORD = 'elvl gbdy avwj jzpf'

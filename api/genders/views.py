@@ -1,73 +1,38 @@
-from django.contrib.auth.models import User
-
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from accounts.views import TokenView
+from accounts.permissions import isAdminCustom, isVerified
 from books.models import Book
 
 from .models import Gender
 from .serializers import GenderSerializer
 
-
 # Create your views here.
 class GenderCreate(APIView):
+    serializer_class = GenderSerializer
     authentication_classes = [JWTAuthentication]
+    permission_classes = [isAdminCustom]
 
     def post(self, request):
-        tokens = TokenView().get(request)
-        tokens_valid = TokenView().valid_tokens(tokens)
-        if not tokens_valid:
-            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-            return response
-        
-        user_id = TokenView().decode_token(tokens[1])
-
-        try:
-            admin_user_instance = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response({'Error': 'The user entered does not exist.'}, status=status.HTTP_404_NOT_FOUND)
-        
-        if not (admin_user_instance.is_superuser or admin_user_instance.is_staff):
-            return Response({'Error': 'The logged in user does not have the permissions to perform this action.'}, status=status.HTTP_401_UNAUTHORIZED)
-
-        serializer = GenderSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response({'Message': 'Gender created.'}, status=status.HTTP_201_CREATED)
-
+        return Response({'Error': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GenderDetail(APIView):
     authentication_classes = [JWTAuthentication]
-    
-    def get(self, request, gender_id):
-        tokens = TokenView().get(request)
-        tokens_valid = TokenView().valid_tokens(tokens)
-        if not tokens_valid:
-            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-            return response
-        
-        user_id = TokenView().decode_token(tokens[1])
-        
-        try:
-            user_instance = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response({'Error': 'No user associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
-        
-        try:
-            user_instance = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response({'Error': 'No user associated with the entered ID.'}, status=status.HTTP_404_NOT_FOUND)
+    permission_classes = [isVerified]
 
+    def get(self, request, gender_id):
         try:
             gender = Gender.objects.get(id=gender_id)
         except Gender.DoesNotExist:
             return Response({'Error': 'There is no gender introduced'}, status=status.HTTP_404_NOT_FOUND)
-        
         books = Book.objects.filter(gender=gender)
         books_list = []
         for book in books:
@@ -90,24 +55,11 @@ class GenderDetail(APIView):
         return Response({'Gender data': gender_data, 'Books with that gender': books_list}, status=status.HTTP_200_OK)
 
 
-
 class GenderList(APIView):
     authentication_classes = [JWTAuthentication]
+    permission_classes = [isVerified]
 
     def get(self, request):
-        tokens = TokenView().get(request)
-        tokens_valid = TokenView().valid_tokens(tokens)
-        if not tokens_valid:
-            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-            return response
-
-        user_id = TokenView().decode_token(tokens[1])
-        
-        try:
-            user_instance = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response({'Error': 'The user entered does not exist.'}, status=status.HTTP_404_NOT_FOUND)
-        
         genders = Gender.objects.all()
         genders_data_list = []
         if genders:
@@ -124,60 +76,30 @@ class GenderList(APIView):
 
 class GenderDelete(APIView):
     authentication_classes = [JWTAuthentication]
+    permission_classes = [isAdminCustom]
 
     def delete(self, request, gender_id):
-        tokens = TokenView().get(request)
-        tokens_valid = TokenView().valid_tokens(tokens)
-        if not tokens_valid:
-            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-            return response
-        
-        user_id = TokenView().decode_token(tokens[1])
-        
-        try:
-            admin_user_instance = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response({'Error': 'The user entered does not exist.'}, status=status.HTTP_404_NOT_FOUND)
-
         try:
             gender = Gender.objects.get(id=gender_id)
         except Gender.DoesNotExist:
             return Response({'Error': 'There is no gender introduced'}, status=status.HTTP_404_NOT_FOUND)
-
-        if not( admin_user_instance.is_staff or admin_user_instance.is_superuser):
-            return Response({'Error': 'The logged in user does not have the permissions to perform this action.'}, status=status.HTTP_401_UNAUTHORIZED)
-
         gender.delete()
         return Response({'Message': 'The entered gender is deleted.'}, status=status.HTTP_200_OK)
 
 
-
 class GenderUpdate(APIView):
+    serializer_class = GenderSerializer
     authentication_classes = [JWTAuthentication]
+    permission_classes = [isAdminCustom]
 
     def put(self, request, gender_id):
-        tokens = TokenView().get(request)
-        tokens_valid = TokenView().valid_tokens(tokens)
-        if not tokens_valid:
-            response = Response({'Error': 'Tokens not found in cookies'}, status=status.HTTP_401_UNAUTHORIZED)
-            return response
-        
-        user_id = TokenView().decode_token(tokens[1])
-        
-        try:
-            admin_user = User.objects.get(id=user_id)
-        except User.DoesNotExist:
-            return Response({'Error': 'The user entered does not exist.'}, status=status.HTTP_404_NOT_FOUND)
-        
         try:
             gender = Gender.objects.get(id=gender_id)
         except Gender.DoesNotExist:
             return Response({'Error': 'There is no gender introduced'}, status=status.HTTP_404_NOT_FOUND)
 
-        if not (admin_user.is_staff or admin_user.is_superuser):
-            return Response({'Error': 'The logged in user does not have the permissions to perform this action.'}, status=status.HTTP_401_UNAUTHORIZED)
-
-        serializer = GenderSerializer(instance=gender, data=request.data)
+        data = request.data
+        serializer = self.serializer_class(instance=gender, data=data)
         if serializer.is_valid():
             serializer.save()
             return Response({'Message': 'The entered gender has been updated.'}, status=status.HTTP_200_OK)

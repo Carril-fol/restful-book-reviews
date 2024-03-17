@@ -1,14 +1,15 @@
 import datetime
 
 from django.urls import reverse
-from django.contrib.auth.models import User
 
 from rest_framework.test import APITestCase
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 
-
 from profiles.models import Profile
+
+from .utils import TokenView
+from .models import UserCustom
 
 # Create your tests here.
 
@@ -16,79 +17,84 @@ class RegisterTestCase(APITestCase):
     
     def setUp(self):
         self.account_data = {
-            "username": "username test",
-            "password": "passwordtest",
-            "password2": "passwordtest",
-            "first_name": "Test",
-            "last_name": "Case",
-            "email": "test@gmail.com"
+            'username': "username",
+            'first_name': "First name test",
+            'last_name': "Last name test",
+            'email': "emailtest@gmail.com",
+            'password': "passwordTest123-",
+            'confirm_password': "passwordTest123-",
         }
 
     def test_register_view(self):
         url = reverse('register')
         response = self.client.post(url, self.account_data)
-        user_id = User.objects.get(username='username test').pk
-        
+        user_id = UserCustom.objects.last().pk
+
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data, {"Message": "Email verification send"})
         self.assertEqual(Profile.objects.get().user.pk, user_id)
-        self.assertIn('access', response.data)
-        self.assertIn('refresh', response.data)
 
 
 class LoginTestCase(APITestCase):
-
+    
     def setUp(self):
-        self.time_exp = datetime.datetime.now()
-        self.account_data = {
-            "username": "username test",
-            "password": "passwordtest",
-            "password2": "passwordtest",
-            "first_name": "Test",
-            "last_name": "Case",
-            "email": "test@gmail.com"
+        self.common_user = UserCustom.objects.create(
+            username='username',
+            first_name='first test',
+            last_name='last test',
+            email='emailtest@gmail.com',
+            password='passwordTest123-'
+        )
+        self.admin_user = UserCustom.objects.create_superuser(
+            username='user admin',
+            first_name='first test',
+            last_name='last test',
+            email='emailtestadmin@gmail.com',
+            password='passwordTest123-'
+        )
+        self.login_data_common_user = {
+            'email': 'emailtest@gmail.com',
+            'password': 'passwordTest123-'
         }
-        self.login_data = {
-            'username': self.account_data['username'],
-            'password': self.account_data['password']
-        }
+        self.login_data_admin_user = {
+            'email': 'emailtestadmin@gmail.com',
+            'password': 'passwordTest123-'
+        }        
 
-    def test_login_view(self):
-        url_register = reverse('register')
-        url_login = reverse('login')
-        response_register = self.client.post(url_register, self.account_data)
-        response_login = self.client.post(url_login, self.login_data)
-        
-        self.assertEqual(response_register.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response_login.status_code, status.HTTP_200_OK)
-        self.assertIn('access', response_login.data)
-        self.assertIn('refresh', response_login.data)
-
-
-class LogoutViewTestCase(APITestCase):
-
-    def setUp(self):
-        self.time_exp = datetime.datetime.now()
-        self.user = User.objects.create_user(username='testuser', password='testpassword')
-        self.refresh_token = RefreshToken.for_user(self.user)
-        self.client.cookies['refresh'] = self.refresh_token
-
-    def test_logout_successful(self):
-        url = reverse('logout')
-        response = self.client.post(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_logout_unsuccesful(self):
-        self.client.cookies['refresh'] = ''
-
-        url = reverse('logout')
-        response = self.client.post(url)
+    def test_login_user_not_verified(self):
+        url = reverse('login')
+        response = self.client.post(url, self.login_data_common_user)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_logout_token_invalid(self):
-        refresh_token = RefreshToken.for_user(self.user)
-        invalid_token_exp = refresh_token.set_exp(self.time_exp)
-        self.client.cookies['refresh'] = invalid_token_exp
+    def test_login_view(self):
+        url = reverse('login')
+        response = self.client.post(url, self.login_data_admin_user)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        url = reverse('logout')
-        response = self.client.post(url)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+class LogoutTestCase(APITestCase):
+
+    def setUp(self):
+        self.admin_user = UserCustom.objects.create_superuser(
+            username='user admin',
+            first_name='first test',
+            last_name='last test',
+            email='emailtestadmin@gmail.com',
+            password='passwordTest123-'
+        )
+        self.login_data_admin_user = {
+            'email': 'emailtestadmin@gmail.com',
+            'password': 'passwordTest123-'
+        }     
+
+    def test_logout_user(self):
+        url_logout = reverse('logout')
+        url_login = reverse('login')
+
+        response_login = self.client.post(url_login, self.login_data_admin_user)        
+        response_login.set_cookie('access', response_login.data['access'])
+        response_login.set_cookie('refresh', response_login.data['refresh'])
+
+        response_logout = self.client.post(url_logout)
+        self.assertEqual(response_login.status_code, status.HTTP_200_OK)
+        self.assertEqual(response_logout.status_code, status.HTTP_200_OK)

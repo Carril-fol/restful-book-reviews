@@ -27,7 +27,6 @@ urlpatterns = [
     path('profiles/', include('profiles.urls')),
     path('books/', include('books.urls')),
     path('genders/', include('genders.urls')),
-    path('publishers/', include('publishers.urls')),
     path('reviews/', include('reviews.urls')),
     # Documentation
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
