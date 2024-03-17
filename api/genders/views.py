@@ -12,6 +12,25 @@ from .serializers import GenderSerializer
 
 # Create your views here.
 class GenderCreate(APIView):
+    """
+    Example:
+
+    POST: api/gender-builder/
+
+    ```
+    Aplication data: 
+    
+    {
+        "name": "Name from the gender",
+        "synopsis": "Synopsis from the gender"
+    }
+
+    Successful response (code 201 - Created):
+    {
+        'Message': 'Gender created.'
+    }
+    ```
+    """
     serializer_class = GenderSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [isAdminCustom]
@@ -25,6 +44,22 @@ class GenderCreate(APIView):
 
 
 class GenderDetail(APIView):
+    """
+    Example:
+
+    GET: api/gender-detail/<int:gender_id>/
+
+    ```
+    Successful response (code 200 - OK):
+    {
+        'Gender data': {
+            'id': gender.pk,
+            'gender': gender.name,
+            'synopsis': gender.synopsis
+        }
+    }
+    ```
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [isVerified]
 
@@ -56,6 +91,24 @@ class GenderDetail(APIView):
 
 
 class GenderList(APIView):
+    """
+    Example:
+
+    GET: api/list-genders/
+
+    ```
+    Successful response (code 200 - OK):
+    {
+        'Genders': [
+            {
+                'id': gender.pk,
+                'gender': gender.name,
+                'synopsis': gender.synopsis
+            }
+        ]
+    }
+    ```
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [isVerified]
 
@@ -75,6 +128,23 @@ class GenderList(APIView):
 
 
 class GenderDelete(APIView):
+    """
+    Example:
+
+    DELETE: api/gender-delete/<int:gender_id>/
+
+    ```
+    Successful response (code 200 - OK):
+    {
+        'Message': 'The entered gender is deleted.'
+    }
+
+    Response with validation errors (code 404 - Not Found):
+    {
+        'Error': 'There is no gender introduced'
+    }
+    ```
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [isAdminCustom]
 
@@ -88,6 +158,30 @@ class GenderDelete(APIView):
 
 
 class GenderUpdate(APIView):
+    """
+    Example:
+
+    UPDATE: api/gender-update/<int:gender_id>/
+
+    ```
+    Aplication data:
+    {
+        "name": "New name for the gender",
+        "synopsis": "New synopsis for the gender"
+    }
+
+    Successful response (code 200 - OK):
+    {
+        "Message": "The entered gender has been updated."
+    }
+
+    Response with validation errors (code 400 - Bad Request):
+    {
+        "name": "The name of the gender must have more than one character.",
+        "synopsis": "The synopsis of the gender must have more than 50 character."
+    }
+    ```
+    """
     serializer_class = GenderSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [isAdminCustom]

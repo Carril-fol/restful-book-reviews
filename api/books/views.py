@@ -15,6 +15,40 @@ from .models import Book
 
 # Create your views here.
 class PublishBook(APIView):
+    """
+    Example:
+
+    POST: api/book-publish/
+
+    ```
+    Aplication data:
+
+    {
+        "title": "Title of book",
+        "subtitle": "Subtitle of book",
+        "isbn": "ISBN from the book",
+        "image_book (optional)": "Cover for the book",
+        "author": "Author from the book",
+        "publication_data": "Publication date from the book",
+        "synopsis": "Synopsis from the book",
+        "gender": "PK from the gender of the book"
+    }
+
+    Successful response (code 201 - Created):
+    {
+        "Message": "Book published."
+    }
+
+
+    Response with validation errors (code 400 - Bad Request):
+    {
+        "title": ["This field is obligatory."],
+        "subtitle": ["This field is obligatory."],
+        "isbn": ["This field has to be unique."],
+        // Other errors of validation from the serializer.
+    }
+    ```
+    """
     serializer_class = BookSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [isAdminCustom]
@@ -29,6 +63,29 @@ class PublishBook(APIView):
 
 
 class AllBooksList(APIView):
+    """
+    Example:
+
+    GET: api/books/
+
+    ```
+    Successful response (code 200 - OK):
+    {
+        "All books": [
+        book_data = {
+            'id': book.pk,
+            'title': book.title,
+            'subtitle': book.subtitle,
+            'isbn': book.isbn,
+            'author': book.author,
+            'publication_date': book.publication_date,
+            'synopsis': book.synopsis,
+            'gender': gender_data
+            }
+        ]
+    }
+    ```
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [isVerified]
     
@@ -56,6 +113,28 @@ class AllBooksList(APIView):
 
 
 class ListBookSpecificGender(APIView):
+    """
+    Example:
+
+    GET: api/books/gender/<int:gender_id>/
+
+    ```
+    Successful response (code 200 - OK):
+    
+    {
+        "books": [
+            'id': book.pk,
+            'title': book.title,
+            'subtitle': book.subtitle,
+            'isbn': book.isbn,
+            'author': book.author,
+            'publication_date': book.publication_date,
+            'synopsis': book.synopsis,
+            'gender': gender_data
+        ]
+    }
+    ```
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [isVerified]
 
@@ -87,6 +166,29 @@ class ListBookSpecificGender(APIView):
         
 
 class DetailBook(APIView):
+    """
+    Example:
+
+    GET: api/detail/book/<int:book_id>/
+
+    ```
+    Successful response (code 200 - OK):
+
+    {
+        "Book": {
+            'id': book.pk,
+            'title': book.title,
+            'subtitle': book.subtitle,
+            'isbn': book.isbn,
+            'author': book.author,
+            'publication_date': book.publication_date,
+            'synopsis': book.synopsis,
+            'gender': gender_data,
+            'reviews': reviews_list
+        }
+    }
+    ```
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [isVerified]
 
@@ -103,7 +205,7 @@ class DetailBook(APIView):
                 'comment': review.comment,
                 'stars': review.stars,
                 'likes': review.likes_count(),
-                'author_review': review.user_creator.pk,
+                'author_review': review.profile_creator.pk,
                 'book': review.book.pk
             }
             reviews_list.append(review_data)      
@@ -127,16 +229,42 @@ class DetailBook(APIView):
 
 
 class DeleteBook(APIView):
+    """
+    Example:
+
+    DELETE: api/delete/book/<int:book_id>/
+
+    ```
+    Successful response (code 200 - OK):
+
+    {
+        "Message": "Book deleted."
+    }
+    ```
+    """
     authentication_classes = [JWTAuthentication]
     permission_classes = [isAdminCustom]
 
     def delete(self, request, book_id):
         book = get_object_or_404(Book, id=book_id)
         book.delete()
-        return Response({'Message': 'Book deleted.'}, status=status.HTTP_200_OK)
+        return Response({"Message": "Book deleted."}, status=status.HTTP_200_OK)
 
 
 class UpdateBook(APIView):
+    """
+    Example:
+    
+    PUT: api/update/book/<int:book_id>/
+
+    ```
+    Successful response (code 200 - OK):
+
+    {
+        'Message': 'Book updated.'
+    }
+    ```
+    """
     serializer_class = BookSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [isAdminCustom]

@@ -4,13 +4,13 @@
 
 <div>
   <p align="center">
-    <a href="https://saythanks.io/to/bullredeyes@gmail.com">
+    <a>
         <img src="https://img.shields.io/badge/Python-FFD43B?style=for-the-badge&logo=python&logoColor=blue" alt="Python">
     </a>
-    <a href="https://badge.fury.io/js/electron-markdownify">
+    <a>
       <img src="https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=green" alt="Django">
     </a>
-    <a href="https://gitter.im/amitmerchant1990/electron-markdownify">
+    <a>
       <img src="https://img.shields.io/badge/django%20rest-ff1709?style=for-the-badge&logo=django&logoColor=white" alt="Django Rest Fremework">
     </a>
     <a>
@@ -36,14 +36,6 @@
 * #### List of genders: A list of books.
 * #### Delete gender: Allows administrator users to delete genres.
 * #### Update gender: Allows administrator users to update the genres of the books.
-
-### Publishers:
-        
-* #### Create a publisher: Allows administrator users to create publishers for the publication of books.
-* #### Detail a publisher: It shows the details of the publisher and the books that belong to it.
-* #### Delete a publisher: Allows administrator users delete publishers.
-* #### Update a publisher: Allows administrator users to update publisher data.
-* #### List of Books from the publisher: A list of the publisher's books.
 
 ### Reviews:
 

@@ -33,7 +33,7 @@ class RegisterView(APIView):
     """
     Example:
 
-    POST: users/api/register/
+    POST: api/register/
 
     ```
     Application data:

@@ -11,6 +11,7 @@ class UpdateProfileSerializer(serializers.Serializer):
     first_name = serializers.CharField()
     last_name = serializers.CharField()
     bio = serializers.CharField()
+    location = serializers.CharField()
     img_profile = serializers.ImageField(required=False)
     extra_kwargs = {
         'first_name': {'required': False},
